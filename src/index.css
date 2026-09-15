@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dj-bg: #07090e;
+  --color-dj-panel: #0d121d;
+  --color-dj-surface: #131b2a;
+  --color-dj-surface-hover: #1c263b;
+  --color-dj-border: #222e46;
+  --color-dj-accent: #00f0ff;
+  --color-dj-neon-blue: #00b4d8;
+  --color-dj-neon-green: #10b981;
+  --color-dj-neon-orange: #f97316;
+  --color-dj-neon-red: #ef4444;
+  --color-dj-neon-purple: #a855f7;
+  --color-dj-deck-a: #00f0ff;
+  --color-dj-deck-b: #ff2e88;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  background-color: #07090e;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: rgba(13, 18, 29, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-card {
+  background: rgba(19, 27, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Tactile Performance Buttons */
+.tactile-btn {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
+.tactile-btn:active {
+  transform: scale(0.96);
+}
+
+/* Custom DJ Fader Thumbs - Brushed Aluminum Cap with Center Glow Line */
+input[type="range"].slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 18px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #475569 0%, #1e293b 50%, #0f172a 100%);
+  border: 1px solid #94a3b8;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+input[type="range"].slider-thumb::-moz-range-thumb {
+  width: 32px;
+  height: 18px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #475569 0%, #1e293b 50%, #0f172a 100%);
+  border: 1px solid #94a3b8;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Vertical Pitch Fader Thumb */
+input[type="range"].pitch-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #64748b 0%, #334155 50%, #0f172a 100%);
+  border: 1px solid #cbd5e1;
+  cursor: ns-resize;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+input[type="range"].pitch-thumb::-moz-range-thumb {
+  width: 22px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #64748b 0%, #334155 50%, #0f172a 100%);
+  border: 1px solid #cbd5e1;
+  cursor: ns-resize;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Sleek cyber dark scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #080a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+

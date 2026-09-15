@@ -1,0 +1,46 @@
+{
+  "appId": "com.mixcortex.ai",
+  "productName": "MixCortex AI",
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "iammrwrath",
+      "repo": "MixCortex-AI"
+    }
+  ],
+  "directories": {
+    "output": "dist-electron"
+  },
+  "compression": "normal",
+  "files": [
+    "dist/**/*",
+    "main.cjs",
+    "preload.cjs",
+    "build/cortex-icon.png",
+    "public/cortex-icon.png"
+  ],
+  "win": {
+    "icon": "build/cortex-icon.png",
+    "target": [
+      "portable",
+      "nsis"
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": "always",
+    "createStartMenuShortcut": true,
+    "shortcutName": "MixCortex AI",
+    "uninstallDisplayName": "MixCortex AI",
+    "deleteAppDataOnUninstall": false,
+    "runAfterFinish": true,
+    "differentialPackage": false,
+    "artifactName": "MixCortex-AI-Setup.${ext}"
+  },
+  "portable": {
+    "artifactName": "MixCortex-AI-Portable.${ext}"
+  }
+}

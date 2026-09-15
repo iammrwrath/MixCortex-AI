@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#141126" />
+      <stop offset="85%" stop-color="#07090e" />
+      <stop offset="100%" stop-color="#030407" />
+    </radialGradient>
+
+    <!-- Neon Glow Filters -->
+    <filter id="cortexNeonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur1" />
+      <feGaussianBlur stdDeviation="14" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="cyanGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Gradients -->
+    <linearGradient id="purpleCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc" />
+      <stop offset="45%" stop-color="#a855f7" />
+      <stop offset="75%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+
+    <linearGradient id="purpleRingGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ec4899" />
+      <stop offset="50%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Base Icon Plate -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" stroke="#232738" stroke-width="3" />
+
+  <!-- Outer Camelot Wheel Arc Segments (Subtle Harmonic Segments) -->
+  <g opacity="0.4" stroke-width="2">
+    <circle cx="256" cy="256" r="216" fill="none" stroke="#334155" stroke-dasharray="14 10" />
+    <circle cx="256" cy="256" r="192" fill="none" stroke="#1e293b" stroke-width="1.5" />
+    <circle cx="256" cy="256" r="168" fill="none" stroke="#334155" stroke-dasharray="6 8" />
+  </g>
+
+  <!-- Glowing Camelot Radar Sweep Arcs -->
+  <g filter="url(#cortexNeonGlow)">
+    <!-- Right Upper Arc: Magenta / Violet -->
+    <path d="M 256 52 A 204 204 0 0 1 460 256" fill="none" stroke="url(#purpleRingGrad)" stroke-width="5" stroke-linecap="round" />
+    <!-- Left Lower Arc: Cyan / Electric Blue -->
+    <path d="M 256 460 A 204 204 0 0 1 52 256" fill="none" stroke="url(#purpleCyanGrad)" stroke-width="5" stroke-linecap="round" />
+  </g>
+
+  <!-- Camelot Harmonic Notch Blocks -->
+  <g opacity="0.85">
+    <rect x="250" y="44" width="12" height="18" rx="3" fill="#ec4899" filter="url(#cortexNeonGlow)" />
+    <rect x="450" y="250" width="18" height="12" rx="3" fill="#a855f7" filter="url(#cortexNeonGlow)" />
+    <rect x="250" y="450" width="12" height="18" rx="3" fill="#06b6d4" filter="url(#cortexNeonGlow)" />
+    <rect x="44" y="250" width="18" height="12" rx="3" fill="#3b82f6" filter="url(#cortexNeonGlow)" />
+  </g>
+
+  <!-- Turntable Platter Concentric Micro-Grooves (Vinyl Right Side) -->
+  <g opacity="0.35" stroke="#64748b" stroke-width="1.2">
+    <path d="M 256 112 A 144 144 0 0 1 256 400" fill="none" />
+    <path d="M 256 128 A 128 128 0 0 1 256 384" fill="none" />
+    <path d="M 256 144 A 112 112 0 0 1 256 368" fill="none" />
+    <path d="M 256 160 A 96 96 0 0 1 256 352" fill="none" />
+    <path d="M 256 176 A 80 80 0 0 1 256 336" fill="none" />
+    <path d="M 256 192 A 64 64 0 0 1 256 320" fill="none" />
+  </g>
+
+  <!-- Left Side: Neural Cortex Cybernetic Brain Circuits -->
+  <g filter="url(#cortexNeonGlow)">
+    <!-- Main Brain Hemisphere Outline -->
+    <path d="M 246 124 
+             C 210 124, 160 144, 150 180 
+             C 134 196, 126 226, 138 256 
+             C 126 280, 136 320, 160 338 
+             C 174 366, 216 388, 246 388 Z" 
+          fill="none" 
+          stroke="#c084fc" 
+          stroke-width="5.5" 
+          stroke-linejoin="round" />
+
+    <!-- Circuit Branch 1 (Upper Lobe) -->
+    <path d="M 246 160 L 210 160 L 186 184 L 166 184" fill="none" stroke="#a855f7" stroke-width="4.5" stroke-linecap="round" />
+    <circle cx="166" cy="184" r="5.5" fill="#e879f9" />
+
+    <!-- Circuit Branch 2 (Mid Center Lobe) -->
+    <path d="M 246 220 L 200 220 L 176 244 L 152 244" fill="none" stroke="#22d3ee" stroke-width="4.5" stroke-linecap="round" />
+    <circle cx="152" cy="244" r="5.5" fill="#67e8f9" />
+
+    <!-- Circuit Branch 3 (Core Lobe) -->
+    <path d="M 246 280 L 196 280 L 172 304 L 180 326" fill="none" stroke="#c084fc" stroke-width="4.5" stroke-linecap="round" />
+    <circle cx="180" cy="326" r="5.5" fill="#e879f9" />
+
+    <!-- Circuit Branch 4 (Lower Stem) -->
+    <path d="M 246 344 L 216 344 L 200 360" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" />
+    <circle cx="200" cy="360" r="5.5" fill="#38bdf8" />
+  </g>
+
+  <!-- Right Side: Harmonic Frequency Waves & Vinyl Soundwave Ribs -->
+  <g filter="url(#cyanGlow)">
+    <!-- Main Right Hemisphere Harmonizer Arc -->
+    <path d="M 266 124 
+             C 302 124, 352 144, 362 180 
+             C 378 196, 386 226, 374 256 
+             C 386 280, 376 320, 352 338 
+             C 338 366, 296 388, 266 388 Z" 
+          fill="none" 
+          stroke="#22d3ee" 
+          stroke-width="5.5" 
+          stroke-linejoin="round" />
+
+    <!-- Radial Audio Beams -->
+    <line x1="266" y1="170" x2="330" y2="170" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
+    <line x1="266" y1="210" x2="354" y2="210" stroke="#06b6d4" stroke-width="4" stroke-linecap="round" />
+    <line x1="266" y1="256" x2="362" y2="256" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" />
+    <line x1="266" y1="302" x2="350" y2="302" stroke="#06b6d4" stroke-width="4" stroke-linecap="round" />
+    <line x1="266" y1="342" x2="320" y2="342" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <!-- Center Brain Core / Spindle Hub -->
+  <circle cx="256" cy="256" r="24" fill="#07090e" stroke="#c084fc" stroke-width="4" filter="url(#cortexNeonGlow)" />
+  <circle cx="256" cy="256" r="12" fill="#22d3ee" filter="url(#cyanGlow)" />
+  <circle cx="256" cy="256" r="4.5" fill="#ffffff" />
+</svg>
