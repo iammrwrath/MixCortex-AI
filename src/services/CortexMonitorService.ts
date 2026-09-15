@@ -201,22 +201,40 @@ export class CortexMonitorService {
           fileSource: 'djay_import',
         };
 
-        this.nowPlaying = {
-          track: cortexT,
-          source: 'djay_pro',
-          deckId: djayInfo.deck ? String(djayInfo.deck) : '1',
-          title: cortexT.title,
-          artist: cortexT.artist,
-          bpm: cortexT.bpm,
-          key: cortexT.key,
-          camelotKey: cortexT.camelotKey,
-          energyLevel: cortexT.energyLevel,
-          currentTime: djayInfo.currentTime || 0,
-          duration: cortexT.duration,
-          remainingTime: Math.max(0, cortexT.duration - (djayInfo.currentTime || 0)),
-          isPlaying: true,
-        };
-        this.notify();
+        const rawDeck = djayInfo.deck ? String(djayInfo.deck) : '1';
+        const deckId = rawDeck === '1' ? 'A' : rawDeck === '2' ? 'B' : rawDeck;
+
+        const isChanged =
+          this.nowPlaying.title !== cortexT.title ||
+          this.nowPlaying.deckId !== deckId ||
+          this.nowPlaying.camelotKey !== cortexT.camelotKey ||
+          Math.abs(this.nowPlaying.bpm - cortexT.bpm) > 0.4;
+
+        if (isChanged) {
+          if (this.nowPlaying.track && this.nowPlaying.title !== cortexT.title) {
+            cortexAiService.recordTransition(this.nowPlaying.track, cortexT);
+          }
+          this.nowPlaying = {
+            track: cortexT,
+            source: 'djay_pro',
+            deckId,
+            title: cortexT.title,
+            artist: cortexT.artist,
+            bpm: cortexT.bpm,
+            key: cortexT.key,
+            camelotKey: cortexT.camelotKey,
+            energyLevel: cortexT.energyLevel,
+            currentTime: djayInfo.currentTime || 0,
+            duration: cortexT.duration,
+            remainingTime: djayInfo.remainingTime ?? Math.max(0, cortexT.duration - (djayInfo.currentTime || 0)),
+            isPlaying: true,
+          };
+          this.notify();
+        } else {
+          this.nowPlaying.currentTime = djayInfo.currentTime ?? this.nowPlaying.currentTime;
+          this.nowPlaying.remainingTime = djayInfo.remainingTime ?? Math.max(0, this.nowPlaying.duration - this.nowPlaying.currentTime);
+          this.notify();
+        }
       }
     } catch (err) {
       console.warn('djay Pro poll error:', err);

@@ -16,6 +16,7 @@ export interface CortexTrack {
   camelotKey: string; // normalized Camelot e.g. '8A', '3A', '4B'
   energyLevel: number; // 1 to 10
   fileUrl: string;
+  filePath?: string;
   fileSource: 'local' | 'csv' | 'drive' | 'stream' | 'djay_import' | 'youtube';
   coverArtUrl?: string;
   rating?: number;

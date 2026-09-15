@@ -87,8 +87,18 @@ export const CortexRecommendationCard: React.FC<CortexRecommendationCardProps> =
       return () => cancelAnimationFrame(animId);
     }, [isPreviewing]);
 
-    // Drag-and-drop handler for loading into Deck A / Deck B
+    // Drag-and-drop handler for loading into Deck A / Deck B (Native OS drop for djay Pro / Serato / Rekordbox, plus in-app dataTransfer)
     const handleDragStart = (e: React.DragEvent) => {
+      if ((window as any).desktopAPI?.startNativeDrag) {
+        e.preventDefault();
+        (window as any).desktopAPI.startNativeDrag({
+          filePath: (track as any).filePath || track.fileUrl,
+          title: track.title,
+          artist: track.artist,
+        });
+        return;
+      }
+
       e.dataTransfer.setData('text/plain', JSON.stringify({
         id: track.id,
         title: track.title,

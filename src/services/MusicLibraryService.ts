@@ -38,12 +38,31 @@ export class MusicLibraryService {
   public async initLibrary(): Promise<PulseTrack[]> {
     const combined: Map<string, PulseTrack> = new Map();
 
+    // 0. Primary: Direct Algoriddim djay Pro MediaLibrary.db ingestion (6,000+ local tracks with real audio file paths)
+    try {
+      if ((window as any).desktopAPI?.readDjayLibrary) {
+        const djayTracks = await (window as any).desktopAPI.readDjayLibrary();
+        if (Array.isArray(djayTracks) && djayTracks.length > 0) {
+          for (const dt of djayTracks) {
+            combined.set(dt.id, {
+              ...dt,
+              energyLevel: dt.bpm >= 128 ? 8 : dt.bpm >= 120 ? 7 : 6,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not load djay library:', err);
+    }
+
     // 1. Load tracks from CloudMix Pro IndexedDB
     try {
       const storedTracks = await storageCache.getAllTracks();
       for (const t of storedTracks) {
         const pulseT = this.convertDjTrackToPulse(t);
-        combined.set(pulseT.id, pulseT);
+        if (!combined.has(pulseT.id)) {
+          combined.set(pulseT.id, pulseT);
+        }
       }
     } catch (err) {
       console.warn('Could not load tracks from storageCache:', err);

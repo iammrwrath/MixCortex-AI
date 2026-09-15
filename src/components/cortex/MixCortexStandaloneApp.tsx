@@ -75,18 +75,53 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
     }
   };
 
-  // Remote load into CloudMix Pro from standalone MixCortex!
+  const [loadBanner, setLoadBanner] = useState<{ text: string; deckId: 'A' | 'B' } | null>(null);
+
+  // Load into Deck A / Deck B (Handles CloudMix broadcast, clipboard copy, and drag reminder for djay Pro)
   const handleRemoteLoad = (deckId: 'A' | 'B', track: any) => {
+    // 1. Broadcast to CloudMix Pro
     universalDjBridge.loadIntoCloudMixDeck(deckId, track);
+
+    // 2. Copy track query to clipboard for instant search in djay Pro
+    const query = `${track.artist} - ${track.title}`;
+    try {
+      navigator.clipboard?.writeText(query);
+    } catch {}
+
+    // 3. UI feedback
     setCopiedId(`load_${deckId}_${track.id}`);
-    setTimeout(() => setCopiedId(null), 1500);
+    setLoadBanner({
+      deckId,
+      text: `Deck ${deckId}: Copied "${query}" to clipboard. Drag card onto Deck ${deckId} in djay Pro to load file!`,
+    });
+
+    setTimeout(() => setCopiedId(null), 2000);
+    setTimeout(() => setLoadBanner(null), 4000);
   };
 
   return (
     <div
-      className="flex flex-col h-screen w-screen bg-[#07090e] text-zinc-100 select-none overflow-hidden font-sans border border-slate-800"
+      className="flex flex-col h-screen w-screen bg-[#07090e] text-zinc-100 select-none overflow-hidden font-sans border border-slate-800 relative"
       style={{ opacity }}
     >
+      {/* Dynamic Action Notification Toast */}
+      {loadBanner && (
+        <div className="absolute top-10 left-2 right-2 z-50 bg-gradient-to-r from-purple-900 via-indigo-950 to-cyan-900 border border-cyan-400/50 rounded-lg p-2 text-xs flex items-center justify-between text-white shadow-2xl animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center space-x-2 truncate">
+            <span className="px-1.5 py-0.5 rounded font-black text-[9px] bg-cyan-400 text-black shrink-0">
+              LOAD {loadBanner.deckId}
+            </span>
+            <span className="truncate text-zinc-200 text-[11px]">{loadBanner.text}</span>
+          </div>
+          <button
+            onClick={() => setLoadBanner(null)}
+            className="text-zinc-400 hover:text-white p-0.5 cursor-pointer ml-2 shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* 1. CUSTOM PRO-AUDIO FRAMELESS TITLE BAR */}
       <div
         className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-slate-950 via-[#0c0e18] to-slate-950 border-b border-slate-800/90 text-xs shrink-0 select-none"

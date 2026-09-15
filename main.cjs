@@ -226,43 +226,330 @@ ipcMain.handle('write-now-playing-broadcast', async (event, { title, artist, bpm
   }
 });
 
+// Algoriddim djay Pro Database & Native Integration
+const djayDbPath = 'C:\\Users\\icell\\Music\\djay\\djay Media Library\\MediaLibrary.db';
+let djayDbInstance = null;
+
+function getDjayDb() {
+  if (!djayDbInstance && fs.existsSync(djayDbPath)) {
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      djayDbInstance = new DatabaseSync(djayDbPath, { readOnly: true });
+      log('[DJAY DB] Opened djay MediaLibrary.db in read-only mode');
+    } catch (e) {
+      log('[DJAY DB ERROR] Could not open SQLite database: ' + e.message);
+    }
+  }
+  return djayDbInstance;
+}
+
+const camelotMajor = ['8B', '3B', '10B', '5B', '12B', '7B', '2B', '9B', '4B', '11B', '6B', '1B'];
+const camelotMinor = ['5A', '12A', '7A', '2A', '9A', '4A', '11A', '6A', '1A', '8A', '3A', '10A'];
+
+function getCamelotKeyFromIndex(keyIdx) {
+  if (keyIdx >= 0 && keyIdx < 12) return camelotMajor[keyIdx];
+  if (keyIdx >= 12 && keyIdx < 24) return camelotMinor[keyIdx - 12];
+  return '8A';
+}
+
 ipcMain.handle('read-djay-nowplaying', async () => {
+  // 1. Direct SQLite MediaLibrary.db Query (<2ms)
   try {
-    const streamerTxt = 'C:\\StreamerBot\\nowplaying.txt';
-    if (fs.existsSync(streamerTxt)) {
-      const raw = fs.readFileSync(streamerTxt, 'utf8').trim();
-      let title = raw;
-      let artist = 'djay Pro Artist';
-      let bpm = 124.0;
-      let key = '8A';
-      let deck = '1';
+    const db = getDjayDb();
+    if (db) {
+      const row = db.prepare("SELECT rowid, data FROM database2 WHERE collection='historySessionItems' ORDER BY rowid DESC LIMIT 1").get();
+      if (row && row.data) {
+        const buf = Buffer.from(row.data);
+        
+        let deck = 1;
+        const deckIdx = buf.indexOf(Buffer.from('deckNumber'));
+        if (deckIdx >= 9) {
+          try { deck = Math.round(buf.readDoubleLE(deckIdx - 9)); } catch {}
+        }
 
-      const bpmKeyMatch = raw.match(/\[([0-9.]+)\s*BPM\s*\|\s*([0-9a-zA-Z]+)\]/i);
-      if (bpmKeyMatch) {
-        bpm = parseFloat(bpmKeyMatch[1]) || 124.0;
-        key = bpmKeyMatch[2].trim();
+        let startTime = 0;
+        const stIdx = buf.indexOf(Buffer.from('startTime'));
+        if (stIdx >= 9) {
+          try {
+            const cocoaSecs = buf.readDoubleLE(stIdx - 9);
+            startTime = (978307200 + cocoaSecs) * 1000;
+          } catch {}
+        }
+
+        const str = buf.toString('utf8');
+        const matches = [...str.matchAll(/[\u0020-\u007E\u00A0-\u024F]{2,}/gu)].map((m) => m[0].trim());
+        let title = 'Unknown';
+        let artist = 'djay Pro Artist';
+        let titleId = null;
+
+        for (let i = 0; i < matches.length; i++) {
+          if (matches[i].toLowerCase() === 'title' && i > 0) title = matches[i - 1];
+          if (matches[i].toLowerCase() === 'artist' && i > 0) artist = matches[i - 1];
+          if (matches[i].toLowerCase() === 'titleid' && i > 0) titleId = matches[i - 1];
+        }
+
+        let bpm = 124.0;
+        let keyIdx = 4;
+        let duration = 210;
+
+        if (titleId) {
+          try {
+            const aRow = db.prepare("SELECT data FROM database2 WHERE collection='mediaItemAnalyzedData' AND key = ?").get(titleId);
+            if (aRow && aRow.data) {
+              const aBuf = Buffer.from(aRow.data);
+              const bIdx = aBuf.indexOf(Buffer.from('bpm'));
+              if (bIdx >= 9) {
+                try { bpm = Math.round(aBuf.readDoubleLE(bIdx - 9) * 10) / 10; } catch {}
+              }
+              const kIdx = aBuf.indexOf(Buffer.from('keySignatureIndex'));
+              if (kIdx >= 9) {
+                try { keyIdx = Math.round(aBuf.readDoubleLE(kIdx - 9)); } catch {}
+              }
+              const dIdx = aBuf.indexOf(Buffer.from('duration'));
+              if (dIdx >= 9) {
+                try { duration = Math.round(aBuf.readDoubleLE(dIdx - 9)); } catch {}
+              }
+            }
+          } catch {}
+        }
+
+        const camelotKey = getCamelotKeyFromIndex(keyIdx);
+        const now = Date.now();
+        const elapsedSec = startTime > 0 ? Math.max(0, Math.floor((now - startTime) / 1000)) : 0;
+        const remainingTime = Math.max(0, duration - elapsedSec);
+
+        if (title && title !== 'Unknown') {
+          return {
+            title,
+            artist,
+            deck: String(deck),
+            deckId: deck === 1 ? 'A' : 'B',
+            bpm: bpm > 20 && bpm < 300 ? bpm : 124.0,
+            key: camelotKey,
+            camelotKey,
+            duration,
+            currentTime: elapsedSec,
+            remainingTime,
+            isPlaying: true,
+          };
+        }
       }
-
-      const deckMatch = raw.match(/\(Deck\s*([0-9a-zA-Z]+)\)/i);
-      if (deckMatch) {
-        deck = deckMatch[1].trim();
-      }
-
-      const cleanName = raw.replace(/\[.*?\]|\(.*?\)/g, '').trim();
-      if (cleanName.includes(' - ')) {
-        const parts = cleanName.split(' - ');
-        artist = parts[0].trim();
-        title = parts.slice(1).join(' - ').trim();
-      } else {
-        title = cleanName;
-      }
-
-      return { title, artist, bpm, key, deck, currentTime: 0, duration: 210 };
     }
   } catch (err) {
-    log('read-djay-nowplaying error: ' + err.message);
+    log('read-djay-nowplaying sqlite error: ' + err.message);
   }
+
+  // 2. Fast HTTP daemon fallback (port 8765)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 350);
+    const res = await fetch('http://127.0.0.1:8765/lyrics?meta=1', { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.current_song && data.current_song !== '...') {
+        let title = data.current_song;
+        let artist = 'djay Pro Artist';
+        if (title.includes(' - ')) {
+          const parts = title.split(' - ');
+          artist = parts[0].trim();
+          title = parts.slice(1).join(' - ').trim();
+        }
+        const elapsedSec = Math.floor((data.elapsed_ms || 0) / 1000);
+        return {
+          title,
+          artist,
+          deck: '1',
+          deckId: 'A',
+          bpm: 124.0,
+          key: '8A',
+          camelotKey: '8A',
+          duration: 210,
+          currentTime: elapsedSec,
+          remainingTime: Math.max(0, 210 - elapsedSec),
+          isPlaying: !!data.is_playing,
+        };
+      }
+    }
+  } catch {}
+
+  // 3. Watched output text file fallback
+  const watchedFiles = [
+    'G:\\My Drive\\Backup\\Streamerbot\\Output\\nowplaying.txt',
+    'C:\\StreamerBot\\nowplaying.txt',
+  ];
+  for (const fpath of watchedFiles) {
+    if (fs.existsSync(fpath)) {
+      try {
+        const raw = fs.readFileSync(fpath, 'utf8').trim();
+        if (raw) {
+          const firstLine = raw.split('\n')[0].trim();
+          let title = firstLine;
+          let artist = 'djay Pro';
+          if (title.includes(' - ')) {
+            const parts = title.split(' - ');
+            artist = parts[0].trim();
+            title = parts.slice(1).join(' - ').trim();
+          }
+          return {
+            title,
+            artist,
+            deck: '1',
+            deckId: 'A',
+            bpm: 124.0,
+            key: '8A',
+            camelotKey: '8A',
+            duration: 180,
+            currentTime: 0,
+            remainingTime: 180,
+            isPlaying: true,
+          };
+        }
+      } catch {}
+    }
+  }
+
   return null;
+});
+
+// Full djay Pro Library Extraction (Loads 6,000+ tracks directly from MediaLibrary.db)
+ipcMain.handle('read-djay-library', async () => {
+  try {
+    const db = getDjayDb();
+    if (!db) return [];
+
+    log('[DJAY LIBRARY] Indexing tracks from djay MediaLibrary.db...');
+    const t0 = Date.now();
+
+    // 1. Analyzed data (BPM, Key, Duration)
+    const analyzedStmt = db.prepare("SELECT key, data FROM database2 WHERE collection='mediaItemAnalyzedData'");
+    const analyzed = new Map();
+    for (const r of analyzedStmt.all()) {
+      const buf = Buffer.from(r.data);
+      let bpm = 0;
+      let keyIdx = 4;
+      let dur = 180;
+
+      const bpmIdx = buf.indexOf(Buffer.from('bpm'));
+      if (bpmIdx >= 9) {
+        try { bpm = buf.readDoubleLE(bpmIdx - 9); } catch {}
+      }
+      const keyIdxPos = buf.indexOf(Buffer.from('keySignatureIndex'));
+      if (keyIdxPos >= 9) {
+        try { keyIdx = Math.round(buf.readDoubleLE(keyIdxPos - 9)); } catch {}
+      }
+      const durIdx = buf.indexOf(Buffer.from('duration'));
+      if (durIdx >= 9) {
+        try { dur = buf.readDoubleLE(durIdx - 9); } catch {}
+      }
+
+      analyzed.set(r.key, { bpm, keyIdx, dur });
+    }
+
+    // 2. Local locations (Real filesystem paths)
+    const locStmt = db.prepare("SELECT key, data FROM database2 WHERE collection='localMediaItemLocations'");
+    const locations = new Map();
+    for (const r of locStmt.all()) {
+      const str = Buffer.from(r.data).toString('utf8');
+      const match = str.match(/file:\/\/\/([^\x00-\x1F\x7F]+)/);
+      if (match) {
+        try {
+          const clean = decodeURIComponent(match[1].split('\0')[0]).replace(/\//g, '\\');
+          locations.set(r.key, clean);
+        } catch {}
+      }
+    }
+
+    // 3. Media Items
+    const itemStmt = db.prepare("SELECT key, data FROM database2 WHERE collection='mediaItems'");
+    const tracks = [];
+
+    for (const r of itemStmt.all()) {
+      const buf = Buffer.from(r.data);
+      const str = buf.toString('utf8');
+      const matches = [...str.matchAll(/[\u0020-\u007E\u00A0-\u024F]{2,}/gu)].map((m) => m[0].trim());
+
+      let title = null;
+      let artist = null;
+      for (let i = 0; i < matches.length; i++) {
+        if (matches[i].toLowerCase() === 'title' && i > 0) title = matches[i - 1];
+        if (matches[i].toLowerCase() === 'artist' && i > 0) artist = matches[i - 1];
+      }
+
+      if (title && title !== 'Unknown') {
+        const meta = analyzed.get(r.key) || { bpm: 124, keyIdx: 4, dur: 180 };
+        const filePath = locations.get(r.key) || '';
+        const camelotKey = getCamelotKeyFromIndex(meta.keyIdx);
+
+        tracks.push({
+          id: r.key,
+          title,
+          artist: artist || 'Unknown Artist',
+          bpm: meta.bpm > 20 && meta.bpm < 300 ? Math.round(meta.bpm * 10) / 10 : 124.0,
+          key: camelotKey,
+          camelotKey,
+          duration: meta.dur > 10 ? Math.round(meta.dur) : 180,
+          fileUrl: filePath ? `file:///${filePath.replace(/\\/g, '/')}` : '',
+          filePath,
+          fileSource: 'djay_pro',
+        });
+      }
+    }
+
+    log(`[DJAY LIBRARY] Extracted ${tracks.length} tracks in ${Date.now() - t0}ms`);
+    return tracks;
+  } catch (err) {
+    log('[DJAY LIBRARY ERROR] ' + err.message);
+    return [];
+  }
+});
+
+// Native Windows OS File Drag-and-Drop (Drops real audio files onto djay Pro, Serato, Rekordbox decks)
+ipcMain.on('start-native-drag', (event, payload) => {
+  try {
+    let filePath = typeof payload === 'string' ? payload : (payload.filePath || payload.fileUrl || '');
+    if (filePath && filePath.startsWith('file:///')) {
+      filePath = decodeURIComponent(filePath.replace(/^file:\/\/\/?/, '')).replace(/\//g, '\\');
+    }
+
+    // Search in user's music directory if exact file path isn't direct
+    if (!filePath || !fs.existsSync(filePath)) {
+      const musicDir = 'G:\\My Drive\\Music\\djayPro\\music';
+      if (payload && payload.title && fs.existsSync(musicDir)) {
+        try {
+          const files = fs.readdirSync(musicDir);
+          const tLower = payload.title.toLowerCase();
+          const match = files.find((f) => f.toLowerCase().includes(tLower));
+          if (match) {
+            filePath = path.join(musicDir, match);
+          }
+        } catch {}
+      }
+    }
+
+    // Fallback playlist asset if file is not on local disk
+    if (!filePath || !fs.existsSync(filePath)) {
+      const tempDir = path.join(os.tmpdir(), 'mixcortex_drag');
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+      const safeName = (((payload && payload.artist) || 'DJ') + ' - ' + ((payload && payload.title) || 'Track')).replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
+      filePath = path.join(tempDir, `${safeName}.m3u`);
+      fs.writeFileSync(filePath, `#EXTM3U\n#EXTINF:180,${(payload && payload.artist) || ''} - ${(payload && payload.title) || ''}\n`, 'utf8');
+    }
+
+    log(`[NATIVE DRAG] Starting Windows OS file drag for: ${filePath}`);
+    const iconCandidates = [
+      path.join(__dirname, 'public', 'cortex-icon.png'),
+      path.join(__dirname, 'build', 'cortex-icon.png'),
+    ];
+    let iconPath = iconCandidates.find((p) => fs.existsSync(p));
+
+    event.sender.startDrag({
+      file: filePath,
+      icon: iconPath || filePath,
+    });
+  } catch (err) {
+    log('[NATIVE DRAG ERROR] ' + err.message);
+  }
 });
 
 ipcMain.handle('read-external-nowplaying-file', async (event, filePath) => {
