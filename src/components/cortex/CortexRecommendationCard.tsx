@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { CortexRecommendation, CortexTrack } from '../../types/cortex';
 import { cortexAuditionEngine } from '../../services/CortexAuditionEngine';
-import { Play, Pause, Plus, Check, Music } from 'lucide-react';
+import { Play, Pause, Plus, Check, Music, Copy } from 'lucide-react';
 
 interface CortexRecommendationCardProps {
   rec: CortexRecommendation;
@@ -13,6 +13,7 @@ interface CortexRecommendationCardProps {
   onLoadDeck: (deckId: 'A' | 'B', track: CortexTrack) => void;
   onAddToQueue: (track: CortexTrack) => void;
   onSelectCard: () => void;
+  density?: 'compact' | 'comfortable';
 }
 
 const getCamelotColor = (key: string): { bg: string; text: string; border: string } => {
@@ -46,6 +47,7 @@ export const CortexRecommendationCard: React.FC<CortexRecommendationCardProps> =
     onLoadDeck,
     onAddToQueue,
     onSelectCard,
+    density = 'comfortable',
   }) => {
     const { track, matchScore, harmonicRelation, bpmDiff, bpmDiffPct, energyTag, recommendationBadges } = rec;
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -100,6 +102,122 @@ export const CortexRecommendationCard: React.FC<CortexRecommendationCardProps> =
       }));
       e.dataTransfer.effectAllowed = 'copyMove';
     };
+
+    if (density === 'compact') {
+      return (
+        <div
+          draggable
+          onDragStart={handleDragStart}
+          onClick={onSelectCard}
+          className={`group relative flex items-center justify-between px-2 py-1.5 rounded-lg border transition-all duration-150 select-none cursor-pointer gap-2 ${
+            isFocused
+              ? 'bg-slate-800/95 border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.35)] ring-1 ring-purple-400'
+              : isPreviewing
+              ? 'bg-purple-950/40 border-pink-500/60 shadow-[0_0_10px_rgba(236,72,153,0.25)]'
+              : 'bg-slate-900/80 hover:bg-slate-800/80 border-slate-800/80 hover:border-slate-700'
+          }`}
+        >
+          {/* 1. Score + Key + BPM */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div
+              className={`flex items-center justify-center px-1.5 py-0.5 rounded font-mono text-[10px] font-black shadow-sm ${
+                matchScore >= 95
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black'
+                  : matchScore >= 88
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-slate-700 text-slate-300'
+              }`}
+            >
+              {matchScore}%
+            </div>
+
+            <span
+              className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold border ${keyColor.bg} ${keyColor.text} ${keyColor.border}`}
+            >
+              {track.camelotKey}
+            </span>
+
+            <span className="font-mono text-[10px] font-semibold text-slate-300">
+              {track.bpm.toFixed(1)}
+            </span>
+          </div>
+
+          {/* 2. Track Title & Artist */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center space-x-1 truncate">
+              <h4 className="font-bold text-xs text-slate-100 truncate group-hover:text-white transition-colors">
+                {track.title}
+              </h4>
+              <span className="text-[11px] text-slate-400 truncate opacity-70">
+                — {track.artist}
+              </span>
+            </div>
+            {isPreviewing && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <canvas ref={canvasRef} width={60} height={10} className="rounded" />
+                <div className="flex-1 bg-slate-800 h-1 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-pink-500 to-purple-400"
+                    style={{ width: `${previewProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Actions: Audition, Load A, Load B, Copy */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePreview(track);
+              }}
+              title={isPreviewing ? 'Stop Preview' : 'Audition Preview'}
+              className={`w-6 h-6 rounded flex items-center justify-center transition-all cursor-pointer ${
+                isPreviewing
+                  ? 'bg-pink-500 text-white shadow-[0_0_8px_rgba(236,72,153,0.7)] animate-pulse'
+                  : 'bg-slate-800 hover:bg-purple-600 text-slate-300 hover:text-white'
+              }`}
+            >
+              {isPreviewing ? <Pause className="w-3 h-3 fill-current" /> : <Play className="w-3 h-3 fill-current ml-0.5" />}
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onLoadDeck('A', track);
+              }}
+              title="Load into Deck A"
+              className="px-2 py-0.5 rounded bg-blue-950/80 hover:bg-blue-600 border border-blue-500/40 text-blue-300 hover:text-white font-mono text-[10px] font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              A
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onLoadDeck('B', track);
+              }}
+              title="Load into Deck B"
+              className="px-2 py-0.5 rounded bg-emerald-950/80 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-300 hover:text-white font-mono text-[10px] font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+            >
+              B
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard?.writeText(`${track.artist} - ${track.title}`);
+              }}
+              title="Copy Title to Clipboard for quick search in djay Pro / Serato"
+              className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 cursor-pointer hidden sm:inline-flex"
+            >
+              <Copy className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div

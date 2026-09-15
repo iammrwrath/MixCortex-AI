@@ -33,6 +33,10 @@ import {
   Compass,
   ArrowRight,
   Brain,
+  ChevronDown,
+  ChevronUp,
+  LayoutList,
+  Grid,
 } from 'lucide-react';
 
 interface CortexDJCoPilotProps {
@@ -91,6 +95,8 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
   }>({ track: null, isPlaying: false, progress: 0 });
 
   // UI Panels & Modals
+  const [density, setDensity] = useState<'compact' | 'comfortable'>(compact ? 'compact' : 'comfortable');
+  const [isNowPlayingExpanded, setIsNowPlayingExpanded] = useState<boolean>(!compact);
   const [showCamelotRadar, setShowCamelotRadar] = useState<boolean>(!compact);
   const [isStyleModalOpen, setIsStyleModalOpen] = useState<boolean>(false);
   const [styleRecords, setStyleRecords] = useState<CortexStyleRecord[]>([]);
@@ -270,50 +276,59 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
   return (
     <div className="flex flex-col h-full bg-[#080a0f] text-zinc-100 select-none overflow-hidden p-3 font-sans">
       {/* 1. TOP HEADER & CO-PILOT TOOLBAR */}
-      <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-zinc-800/80">
-        <div className="flex items-center space-x-3">
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-500 via-indigo-500 to-cyan-400 shadow-md shadow-purple-500/25">
-            <Brain className="w-5 h-5 text-white animate-pulse" />
-            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
-            </span>
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <h2 className="font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-cyan-400 text-sm sm:text-base font-mono">
-                MIXCORTEX AI
-              </h2>
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-purple-500/10 text-purple-300 border border-purple-500/30 font-mono">
-                NEURAL CO-PILOT
+      <div className={`flex items-center justify-between border-b border-zinc-800/80 ${compact ? 'pb-2 mb-2' : 'pb-2.5 mb-2.5'}`}>
+        {!compact ? (
+          <div className="flex items-center space-x-3">
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-500 via-indigo-500 to-cyan-400 shadow-md shadow-purple-500/25">
+              <Brain className="w-5 h-5 text-white animate-pulse" />
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
               </span>
             </div>
-            <p className="text-[10.5px] text-zinc-400 hidden sm:block">Real-time harmonic intelligence & vibe recommendations</p>
+
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-cyan-400 text-sm sm:text-base font-mono">
+                  MIXCORTEX AI
+                </h2>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-purple-500/10 text-purple-300 border border-purple-500/30 font-mono">
+                  NEURAL CO-PILOT
+                </span>
+              </div>
+              <p className="text-[10.5px] text-zinc-400 hidden sm:block">Real-time harmonic intelligence & vibe recommendations</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 text-xs text-zinc-400 font-mono">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+              <span className="text-zinc-200 font-bold tracking-wide">LIVE CO-PILOT</span>
+            </div>
+          </div>
+        )}
 
         {/* Source Switcher, Radar Toggle & Desktop Pop-Out */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
           {/* Source Dropdown */}
-          <div className="flex items-center space-x-1.5 bg-zinc-900/90 border border-zinc-800 rounded-lg px-2 py-1 text-xs">
-            <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+          <div className="flex items-center space-x-1 bg-zinc-900/90 border border-zinc-800 rounded-lg px-1.5 py-0.5 text-xs">
+            <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
             <select
               value={nowPlaying.source}
               onChange={(e) => cortexMonitorService.setSource(e.target.value as CortexSourceMode)}
-              className="bg-transparent text-cyan-300 font-bold focus:outline-none cursor-pointer text-xs"
+              className="bg-transparent text-cyan-300 font-bold focus:outline-none cursor-pointer text-xs max-w-[130px] sm:max-w-none truncate"
             >
               <option value="cloudmix" className="bg-zinc-900 text-zinc-200">
-                CloudMix Deck (Auto)
+                CloudMix Deck
               </option>
               <option value="djay_pro" className="bg-zinc-900 text-zinc-200">
-                Algoriddim djay Pro DB
+                djay Pro DB
               </option>
               <option value="file" className="bg-zinc-900 text-zinc-200">
-                Streamer.bot (nowplaying.txt)
+                Streamer.bot (txt)
               </option>
               <option value="manual" className="bg-zinc-900 text-zinc-200">
-                Manual Reference Pin
+                Manual Pin
               </option>
             </select>
           </div>
@@ -322,7 +337,7 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
           <button
             onClick={() => setShowCamelotRadar(!showCamelotRadar)}
             title="Toggle Interactive Camelot Wheel Radar"
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+            className={`flex items-center space-x-1 px-2 py-0.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
               showCamelotRadar
                 ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-sm shadow-purple-500/20'
                 : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
@@ -336,7 +351,7 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
           <button
             onClick={handleOpenStyleModal}
             title="My Style Machine Learning Insights"
-            className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/60 border border-indigo-500/30 text-xs transition cursor-pointer"
+            className="flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/60 border border-indigo-500/30 text-xs transition cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
             <span className="hidden sm:inline">My Style</span>
@@ -347,7 +362,7 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
             <button
               onClick={onPopOutWindow}
               title="Pop Out Desktop Floating Companion Window"
-              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs transition cursor-pointer"
+              className="flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs transition cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Pop Out HUD</span>
@@ -396,78 +411,120 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
 
         {/* Main Center Column: Hero Card + Vibe Filters + Recommendations Feed */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          {/* NOW PLAYING HERO CARD */}
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-zinc-950 via-zinc-900/90 to-zinc-950 border border-zinc-800 p-3 mb-2.5 shadow-xl flex-shrink-0">
-            <div className="flex items-center justify-between">
-              {/* Left: Vinyl Platter & Track Metadata */}
-              <div className="flex items-center space-x-3 min-w-0">
-                <div className="relative flex-shrink-0 w-11 h-11 rounded-full bg-zinc-950 border border-zinc-700/60 flex items-center justify-center shadow-lg overflow-hidden">
-                  <Disc className={`w-8 h-8 text-cyan-400/90 ${nowPlaying.isPlaying ? 'animate-[spin_3s_linear_infinite]' : ''}`} />
-                  <div className="absolute w-3 h-3 rounded-full bg-zinc-900 border border-zinc-600" />
-                </div>
+          {/* NOW PLAYING HUD (Collapsible) */}
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-zinc-950 via-zinc-900/90 to-zinc-950 border border-zinc-800 p-2 sm:p-2.5 mb-2 shadow-lg flex-shrink-0 transition-all">
+            {isNowPlayingExpanded ? (
+              <div className="flex items-center justify-between">
+                {/* Left: Vinyl Platter & Track Metadata */}
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <div className="relative flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-zinc-950 border border-zinc-700/60 flex items-center justify-center shadow-lg overflow-hidden">
+                    <Disc className={`w-6 h-6 sm:w-8 sm:h-8 text-cyan-400/90 ${nowPlaying.isPlaying ? 'animate-[spin_3s_linear_infinite]' : ''}`} />
+                    <div className="absolute w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-600" />
+                  </div>
 
-                <div className="min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-cyan-400 flex items-center space-x-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                      <span>NOW PLAYING</span>
-                    </span>
-                    {nowPlaying.deckId && (
-                      <span className="text-[9px] font-black text-cyan-300 bg-cyan-950/80 px-1 py-0.2 rounded border border-cyan-800/40">
-                        DECK {nowPlaying.deckId}
+                  <div className="min-w-0">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-[9px] uppercase tracking-wider font-extrabold text-cyan-400 flex items-center space-x-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                        <span>NOW PLAYING</span>
                       </span>
-                    )}
+                      {nowPlaying.deckId && (
+                        <span className="text-[8.5px] font-black text-cyan-300 bg-cyan-950/80 px-1 py-0.2 rounded border border-cyan-800/40">
+                          DECK {nowPlaying.deckId}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-xs sm:text-sm text-white truncate max-w-[200px] sm:max-w-md">
+                      {nowPlaying.title}
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 truncate max-w-[200px] sm:max-w-md">
+                      {nowPlaying.artist} {nowPlaying.album ? `— ${nowPlaying.album}` : ''}
+                    </p>
                   </div>
-                  <h3 className="font-bold text-sm text-white truncate max-w-[260px] sm:max-w-md">
-                    {nowPlaying.title}
-                  </h3>
-                  <p className="text-xs text-zinc-400 truncate max-w-[260px] sm:max-w-md">
-                    {nowPlaying.artist} {nowPlaying.album ? `— ${nowPlaying.album}` : ''}
-                  </p>
+                </div>
+
+                {/* Right: Key + BPM + Circular Countdown Ring + Collapse Button */}
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <div className={`px-2 py-0.5 rounded-md border flex flex-col items-center ${nowColor.bg} ${nowColor.border}`}>
+                    <span className="text-[7.5px] font-bold text-zinc-400 uppercase">KEY</span>
+                    <span className={`font-black text-xs ${nowColor.text}`}>{nowPlaying.camelotKey}</span>
+                  </div>
+
+                  <div className="px-2 py-0.5 rounded-md bg-zinc-950 border border-zinc-800 flex flex-col items-center">
+                    <span className="text-[7.5px] font-bold text-zinc-400 uppercase">BPM</span>
+                    <span className="font-black text-xs text-cyan-300">{nowPlaying.bpm.toFixed(1)}</span>
+                  </div>
+
+                  <div className="relative flex items-center justify-center w-9 h-9">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                      <path
+                        className="text-zinc-800"
+                        strokeWidth="3.5"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      <path
+                        className={`${isUrgent ? 'text-rose-500 animate-pulse' : 'text-cyan-400'} transition-all duration-300`}
+                        strokeDasharray={`${remainingPct}, 100`}
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center">
+                      <Clock className={`w-2 h-2 ${isUrgent ? 'text-rose-400 animate-bounce' : 'text-zinc-400'}`} />
+                      <span className={`text-[8px] font-mono font-bold ${isUrgent ? 'text-rose-400' : 'text-zinc-200'}`}>
+                        {formatTimeRemaining(nowPlaying.remainingTime)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsNowPlayingExpanded(false)}
+                    title="Collapse Now Playing banner"
+                    className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 cursor-pointer transition"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-
-              {/* Right: Key + BPM + Circular Countdown Ring */}
-              <div className="flex items-center space-x-3 flex-shrink-0">
-                <div className={`px-2.5 py-1 rounded-lg border flex flex-col items-center ${nowColor.bg} ${nowColor.border}`}>
-                  <span className="text-[8px] font-bold text-zinc-400 uppercase">KEY</span>
-                  <span className={`font-black text-sm ${nowColor.text}`}>{nowPlaying.camelotKey}</span>
-                </div>
-
-                <div className="px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 flex flex-col items-center">
-                  <span className="text-[8px] font-bold text-zinc-400 uppercase">BPM</span>
-                  <span className="font-black text-sm text-cyan-300">{nowPlaying.bpm.toFixed(1)}</span>
-                </div>
-
-                {/* Animated Circular Countdown Ring */}
-                <div className="relative flex items-center justify-center w-11 h-11">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-zinc-800"
-                      strokeWidth="3.5"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className={`${isUrgent ? 'text-rose-500 animate-pulse' : 'text-cyan-400'} transition-all duration-300`}
-                      strokeDasharray={`${remainingPct}, 100`}
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center">
-                    <Clock className={`w-2.5 h-2.5 ${isUrgent ? 'text-rose-400 animate-bounce' : 'text-zinc-400'}`} />
-                    <span className={`text-[9px] font-mono font-bold ${isUrgent ? 'text-rose-400' : 'text-zinc-200'}`}>
-                      {formatTimeRemaining(nowPlaying.remainingTime)}
+            ) : (
+              /* Compact Mini-Strip */
+              <div className="flex items-center justify-between h-7 text-xs">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <Disc className={`w-4 h-4 text-cyan-400 flex-shrink-0 ${nowPlaying.isPlaying ? 'animate-[spin_3s_linear_infinite]' : ''}`} />
+                  {nowPlaying.deckId && (
+                    <span className="text-[8.5px] font-bold text-cyan-300 bg-cyan-950 px-1 py-0.2 rounded border border-cyan-800/50 flex-shrink-0">
+                      {nowPlaying.deckId}
                     </span>
-                  </div>
+                  )}
+                  <span className="font-bold text-white truncate max-w-[120px] sm:max-w-[200px]">{nowPlaying.title}</span>
+                  <span className="text-zinc-400 truncate hidden sm:inline text-[11px]">— {nowPlaying.artist}</span>
+                </div>
+
+                <div className="flex items-center space-x-1.5 flex-shrink-0">
+                  <span className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${nowColor.bg} ${nowColor.border} ${nowColor.text}`}>
+                    {nowPlaying.camelotKey}
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-zinc-900 border border-zinc-800 text-cyan-300 font-mono">
+                    {nowPlaying.bpm.toFixed(0)} BPM
+                  </span>
+                  <span className={`text-[10px] font-mono font-bold ${isUrgent ? 'text-rose-400 animate-pulse' : 'text-zinc-400'}`}>
+                    {formatTimeRemaining(nowPlaying.remainingTime)}
+                  </span>
+                  <button
+                    onClick={() => setIsNowPlayingExpanded(true)}
+                    title="Expand Now Playing details"
+                    className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 cursor-pointer transition"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* VIBE & STRATEGY FILTER BAR */}
@@ -601,13 +658,43 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-zinc-800"
           >
-            <div className="flex items-center justify-between text-xs text-zinc-400 px-1 py-0.5">
-              <span className="font-semibold text-zinc-300">
-                MixCortex Ideas ({recommendations.length} Matches)
-              </span>
-              <span className="text-[11px] text-zinc-500">
-                {tracks.length} tracks indexed • 120 FPS windowed
-              </span>
+            <div className="flex items-center justify-between text-xs text-zinc-400 px-1 py-0.5 mb-1 flex-shrink-0">
+              <div className="flex items-center space-x-1.5">
+                <span className="font-bold text-zinc-200 text-xs">
+                  MixCortex Ideas ({recommendations.length})
+                </span>
+                <span className="text-[10px] text-zinc-500 hidden sm:inline">
+                  • {tracks.length} indexed
+                </span>
+              </div>
+
+              {/* Density View Mode Toggle */}
+              <div className="flex items-center space-x-1 bg-zinc-900 border border-zinc-800 rounded-lg p-0.5">
+                <button
+                  onClick={() => setDensity('compact')}
+                  title="Compact List View (Fit maximum tracks on screen)"
+                  className={`px-1.5 py-0.5 rounded flex items-center space-x-1 text-[10px] font-semibold transition cursor-pointer ${
+                    density === 'compact'
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <LayoutList className="w-3 h-3" />
+                  <span>Compact</span>
+                </button>
+                <button
+                  onClick={() => setDensity('comfortable')}
+                  title="Card View (Detailed Camelot & Energy breakdown)"
+                  className={`px-1.5 py-0.5 rounded flex items-center space-x-1 text-[10px] font-semibold transition cursor-pointer ${
+                    density === 'comfortable'
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Grid className="w-3 h-3" />
+                  <span>Cards</span>
+                </button>
+              </div>
             </div>
 
             {recommendations.length === 0 ? (
@@ -623,6 +710,7 @@ export const CortexDJCoPilot: React.FC<CortexDJCoPilotProps> = ({
                 <CortexRecommendationCard
                   key={rec.track.id}
                   rec={rec}
+                  density={density}
                   isFocused={focusedIndex === idx}
                   isPreviewing={auditionState.isPlaying && auditionState.track?.id === rec.track.id}
                   previewProgress={auditionState.progress}

@@ -102,31 +102,31 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
             </svg>
           </div>
 
-          <div className="flex items-center space-x-1.5">
-            <span className="font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-cyan-300 font-mono text-sm">
+          <div className="flex items-center space-x-1.5 shrink-0">
+            <span className="font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-cyan-300 font-mono text-xs sm:text-sm">
               MIXCORTEX
             </span>
-            <span className="px-1 py-0.2 rounded text-[9px] font-mono font-black bg-purple-500/20 text-purple-300 border border-purple-500/40">
+            <span className="hidden sm:inline-block px-1 py-0.2 rounded text-[9px] font-mono font-black bg-purple-500/20 text-purple-300 border border-purple-500/40">
               AI
             </span>
             {onOpenPatchModal && (
               <button
                 onClick={onOpenPatchModal}
-                title="MixCortex AI v1.0.0 — Check GitHub for updates"
-                className="flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/40 transition-colors cursor-pointer ml-1"
+                title="MixCortex AI v1.0.1 — Check GitHub for updates"
+                className="hidden sm:flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/40 transition-colors cursor-pointer ml-1"
               >
                 <Sparkles className="w-2.5 h-2.5 text-purple-400" />
-                <span>v1.0.0</span>
+                <span>v1.0.1</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Center: Tabs & Source Selector */}
-        <div className="flex items-center space-x-1.5" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center space-x-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={() => setActiveTab('copilot')}
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+            className={`flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all cursor-pointer ${
               activeTab === 'copilot'
                 ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/30'
                 : 'bg-slate-900 text-slate-400 hover:text-white'
@@ -138,14 +138,14 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
 
           <button
             onClick={() => setActiveTab('bridge')}
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+            className={`flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all cursor-pointer ${
               activeTab === 'bridge'
                 ? 'bg-cyan-600 text-black shadow-sm shadow-cyan-500/30'
                 : 'bg-slate-900 text-slate-400 hover:text-white'
             }`}
           >
             <Radio className="w-3 h-3" />
-            <span>DJ Bridge</span>
+            <span>Bridge</span>
             {bridgeState.connections[bridgeState.activeSource]?.status === 'connected' && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping ml-0.5" />
             )}
@@ -212,7 +212,7 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
         {activeTab === 'copilot' ? (
           <CortexDJCoPilot
             onLoadTrackToDeck={(deckId, track) => handleRemoteLoad(deckId as any, track)}
-            compact={false}
+            compact={true}
           />
         ) : (
           /* UNIVERSAL DJ SOFTWARE INTEGRATION HUB */
