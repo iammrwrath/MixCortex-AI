@@ -1,4 +1,30 @@
+### ⚡ MixCortex AI v1.0.4 — Automatic DJ Software Detection
+
+#### 🎯 Auto-Detection Engine
+- **Zero-Configuration Setup**: MixCortex AI now automatically detects which DJ software you are running — no manual source selection required.
+- **CloudMix Pro**: Detected instantly via real-time BroadcastChannel heartbeat (sub-8s).
+- **Algoriddim djay Pro**: Detected by probing the `MediaLibrary.db` SQLite database for recent session history (< 30 min), with DB file modification time as a secondary signal (< 5 min).
+- **Serato DJ Pro / Rekordbox / StreamerBot**: Detected by checking `nowplaying.txt` file recency (< 10 min).
+- **Priority ordering**: CloudMix Pro → djay Pro → Serato/Rekordbox → Manual Pin. The highest-confidence source wins.
+
+#### 🔄 Smart Switching Logic
+- **Non-disruptive**: Auto-detect only switches source when a stronger signal is found; it never thrashes between sources.
+- **15-second grace period**: When you manually click a source card, auto-detect pauses for 15 seconds before resuming — preventing it from immediately overriding your manual selection.
+- **Manual Pin locks auto-detect**: Selecting Manual Pin Mode fully pauses auto-switching until you change it.
+
+#### 🎛️ Bridge Tab UI Updates
+- **`⚡ AUTO / MANUAL` toggle pill** in the Bridge tab header — pulsing green when enabled.
+- **`DETECTED` badge** (pulsing) on source cards that are detected but not yet active.
+- **`FOUND` status** for discovered-but-inactive djay Pro and file sources.
+- **`⚡ AUTO` status** on the active card when it was switched automatically.
+
+#### 🐛 Bug Fix
+- **Version display**: Version badge in title bar now correctly reads from `updateService` (dynamic) instead of a hard-coded string.
+
+---
+
 ### ⚡ MixCortex AI v1.0.3 — In-App Patch Downloader Synchronization & Release Notes Delivery
+
 
 #### 🔄 In-App Patch Downloader Synchronization
 - **Independent MixCortex AI Release Channel**: Resolved an issue where the in-app patch downloader modal in standalone mode queried CloudMix Pro rather than the dedicated MixCortex AI release channel.
