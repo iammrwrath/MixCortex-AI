@@ -3,6 +3,7 @@ import { CortexDJCoPilot } from './CortexDJCoPilot';
 import { universalDjBridge, DjSoftwareConnection } from '../../services/UniversalDjBridgeService';
 import { cortexMonitorService } from '../../services/CortexMonitorService';
 import { CortexTrack, CortexSourceMode } from '../../types/cortex';
+import { updateService } from '../../services/UpdateService';
 import {
   Pin,
   PinOff,
@@ -147,11 +148,11 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
             {onOpenPatchModal && (
               <button
                 onClick={onOpenPatchModal}
-                title="MixCortex AI v1.0.1 — Check GitHub for updates"
+                title={`MixCortex AI v${updateService.getStatus().version} — Check GitHub for updates`}
                 className="hidden sm:flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/40 transition-colors cursor-pointer ml-1"
               >
                 <Sparkles className="w-2.5 h-2.5 text-purple-400" />
-                <span>v1.0.1</span>
+                <span>{`v${updateService.getStatus().version}`}</span>
               </button>
             )}
           </div>
