@@ -36,10 +36,21 @@ jobs:
           EP_GH_IGNORE_TIME: true
         run: npx electron-builder --win nsis portable --publish always
 
-      - name: Undraft GitHub Release
+      - name: Undraft GitHub Release & Populate Release Notes
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          gh release edit ${{ github.ref_name }} --draft=false || true
+          if [ -f RELEASE_NOTES.md ]; then
+            echo "Publishing release notes from RELEASE_NOTES.md..."
+            gh release edit ${{ github.ref_name }} --draft=false --notes-file RELEASE_NOTES.md || true
+          else
+            echo "Generating release notes via GitHub API..."
+            NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes -f tag_name=${{ github.ref_name }} --jq .body || true)
+            if [ -n "$NOTES" ]; then
+              gh release edit ${{ github.ref_name }} --draft=false --notes "$NOTES" || true
+            else
+              gh release edit ${{ github.ref_name }} --draft=false || true
+            fi
+          fi

@@ -22,6 +22,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
   const [releaseName, setReleaseName] = useState<string>('');
   const [publishedAt, setPublishedAt] = useState<string>('');
   const [assetSize, setAssetSize] = useState<string>('');
+  const [downloadUrl, setDownloadUrl] = useState<string>('');
   const [loadingNotes, setLoadingNotes] = useState<boolean>(false);
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
   const fetchGitHubReleaseInfo = async () => {
     setLoadingNotes(true);
     try {
-      const resp = await fetch('https://api.github.com/repos/iammrwrath/CloudMix-Pro/releases/latest');
+      const resp = await fetch('https://api.github.com/repos/iammrwrath/MixCortex-AI/releases/latest');
       if (resp.ok) {
         const data = await resp.json();
         setReleaseName(data.name || data.tag_name || 'Latest Release');
@@ -50,10 +51,16 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
             day: 'numeric',
           }));
         }
-        const exeAsset = data.assets?.find((a: any) => a.name.endsWith('.exe'));
-        if (exeAsset && exeAsset.size) {
-          const mb = (exeAsset.size / (1024 * 1024)).toFixed(1);
-          setAssetSize(`${mb} MB`);
+        const exeAsset = data.assets?.find((a: any) => a.name.includes('Setup') && a.name.endsWith('.exe')) ||
+                         data.assets?.find((a: any) => a.name.endsWith('.exe'));
+        if (exeAsset) {
+          if (exeAsset.size) {
+            const mb = (exeAsset.size / (1024 * 1024)).toFixed(1);
+            setAssetSize(`${mb} MB`);
+          }
+          if (exeAsset.browser_download_url) {
+            setDownloadUrl(exeAsset.browser_download_url);
+          }
         }
       }
     } catch {
@@ -64,7 +71,11 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
   };
 
   const handleDownload = () => {
-    updateService.startDownload();
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+    } else {
+      updateService.startDownload();
+    }
   };
 
   const handleApply = () => {
@@ -93,7 +104,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="font-bold text-white text-sm sm:text-base font-mono">
-                  CloudMix Pro Patch Downloader
+                  MixCortex AI Patch Downloader
                 </h3>
                 <span className="px-1.5 py-0.2 rounded text-[9.5px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
                   GITHUB SYNC
@@ -122,7 +133,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
                 Installed Version
               </span>
               <span className="font-mono text-base font-bold text-slate-200 mt-0.5">
-                v{status.version || '1.2.0'}
+                v{status.version || '1.0.2'}
               </span>
               <span className="text-[10.5px] text-slate-500 mt-0.5">Current workstation build</span>
             </div>
@@ -133,7 +144,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
                 <span>GitHub Latest</span>
               </span>
               <span className="font-mono text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-300 mt-0.5">
-                {releaseName.match(/v[0-9.]+/)?.[0] || 'v1.3.0'}
+                {releaseName.match(/v[0-9.]+/)?.[0] || 'v1.0.2'}
               </span>
               <span className="text-[10.5px] text-slate-500 mt-0.5">
                 {publishedAt ? `Published ${publishedAt}` : 'Available on GitHub'}
@@ -148,7 +159,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
               <div className="flex-1">
                 <span className="font-bold">Patch downloaded and verified!</span>
                 <p className="text-[11px] text-emerald-300/80 mt-0.5">
-                  Click "Restart & Apply" below to install the patch and relaunch CloudMix Pro.
+                  Click "Restart & Apply" below to install the patch and relaunch MixCortex AI.
                 </p>
               </div>
             </div>
@@ -187,7 +198,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
               <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
               <div className="flex-1">
                 <span className="font-semibold text-slate-200">
-                  {status.message || 'CloudMix Pro is currently up to date.'}
+                  {status.message || 'MixCortex AI is currently up to date.'}
                 </span>
               </div>
               <button
@@ -229,7 +240,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
         {/* Modal Footer Actions */}
         <div className="p-3.5 border-t border-slate-800/80 bg-slate-900/60 flex items-center justify-between">
           <a
-            href="https://github.com/iammrwrath/CloudMix-Pro/releases"
+            href="https://github.com/iammrwrath/MixCortex-AI/releases"
             target="_blank"
             rel="noreferrer"
             className="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-cyan-400 font-mono transition-colors"

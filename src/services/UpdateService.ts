@@ -9,7 +9,7 @@ export interface UpdateStatus {
 type UpdateListener = (status: UpdateStatus) => void;
 
 class UpdateService {
-  private currentStatus: UpdateStatus = { status: 'idle', version: '1.0.0' };
+  private currentStatus: UpdateStatus = { status: 'idle', version: '1.0.2' };
   private listeners: Set<UpdateListener> = new Set();
   private initialized = false;
 
@@ -147,7 +147,7 @@ class UpdateService {
       this.notify();
       await (window as any).desktopAPI.startUpdateDownload();
     } else {
-      window.open('https://github.com/iammrwrath/CloudMix-Pro/releases', '_blank');
+      window.open('https://github.com/iammrwrath/MixCortex-AI/releases', '_blank');
     }
   }
 
