@@ -133,7 +133,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
                 Installed Version
               </span>
               <span className="font-mono text-base font-bold text-slate-200 mt-0.5">
-                v{status.version || '1.0.2'}
+                v{status.version || '1.0.3'}
               </span>
               <span className="text-[10.5px] text-slate-500 mt-0.5">Current workstation build</span>
             </div>
@@ -144,7 +144,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
                 <span>GitHub Latest</span>
               </span>
               <span className="font-mono text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-300 mt-0.5">
-                {releaseName.match(/v[0-9.]+/)?.[0] || 'v1.0.2'}
+                {releaseName.match(/v[0-9.]+/)?.[0] || (status.version ? 'v' + status.version : 'v1.0.3')}
               </span>
               <span className="text-[10.5px] text-slate-500 mt-0.5">
                 {publishedAt ? `Published ${publishedAt}` : 'Available on GitHub'}

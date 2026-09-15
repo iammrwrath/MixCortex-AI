@@ -9,7 +9,7 @@ export interface UpdateStatus {
 type UpdateListener = (status: UpdateStatus) => void;
 
 class UpdateService {
-  private currentStatus: UpdateStatus = { status: 'idle', version: '1.0.2' };
+  private currentStatus: UpdateStatus = { status: 'idle', version: '1.0.3' };
   private listeners: Set<UpdateListener> = new Set();
   private initialized = false;
 

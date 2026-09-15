@@ -1,7 +1,7 @@
 {
   "name": "mixcortex-ai",
   "productName": "MixCortex AI",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Autonomous Neural DJ Co-Pilot with Sub-Millisecond Harmonic Matching & Universal DJ Software Bridge",
   "main": "main.cjs",
   "author": "iammrwrath",
