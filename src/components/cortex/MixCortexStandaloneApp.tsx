@@ -253,111 +253,165 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
         ) : (
           /* UNIVERSAL DJ SOFTWARE INTEGRATION HUB */
           <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
-            {/* Header Description */}
+            {/* Header with Auto-Detect toggle */}
             <div className="p-4 rounded-xl bg-gradient-to-r from-purple-950/30 via-slate-900/60 to-cyan-950/30 border border-slate-800">
-              <div className="flex items-center space-x-2 text-sm font-bold text-white font-mono">
-                <Laptop className="w-4 h-4 text-cyan-400" />
-                <span>Universal DJ Software Integrations</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-sm font-bold text-white font-mono">
+                  <Laptop className="w-4 h-4 text-cyan-400" />
+                  <span>Universal DJ Software Integrations</span>
+                </div>
+                {/* Auto-Detect Toggle */}
+                <button
+                  onClick={() => universalDjBridge.setAutoDetect(!bridgeState.autoDetectEnabled)}
+                  className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                    bridgeState.autoDetectEnabled
+                      ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-300'
+                  }`}
+                  title={bridgeState.autoDetectEnabled ? 'Auto-Detect ON — click to switch to manual' : 'Auto-Detect OFF — click to enable'}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${bridgeState.autoDetectEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                  <span>{bridgeState.autoDetectEnabled ? '⚡ AUTO' : 'MANUAL'}</span>
+                </button>
               </div>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                MixCortex AI runs seamlessly alongside all major DJ software. Select your active source below to automatically read what is playing on deck and receive instantaneous harmonic recommendations.
+                {bridgeState.autoDetectEnabled
+                  ? 'Auto-detecting active DJ software every 3 seconds. The highest-confidence source is selected automatically.'
+                  : 'Manual mode — click a source card below to select it.'}
               </p>
             </div>
 
             {/* Connection Matrix Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* 1. CloudMix Pro */}
-              <div
-                onClick={() => universalDjBridge.setSource('cloudmix')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  bridgeState.activeSource === 'cloudmix'
-                    ? 'bg-purple-950/40 border-purple-500 shadow-[0_0_14px_rgba(168,85,247,0.3)] ring-1 ring-purple-400'
-                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-600/30 text-indigo-400 flex items-center justify-center font-bold text-xs">
-                      ⚡
-                    </div>
-                    <span className="font-bold text-sm text-white">CloudMix Pro</span>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                      bridgeState.activeSource === 'cloudmix'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-slate-800 text-slate-400'
+              {(() => {
+                const isActive = bridgeState.activeSource === 'cloudmix';
+                const isDetected = !!bridgeState.lastDetectedSources?.cloudmix;
+                return (
+                  <div
+                    onClick={() => universalDjBridge.setSource('cloudmix')}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all relative ${
+                      isActive
+                        ? 'bg-purple-950/40 border-purple-500 shadow-[0_0_14px_rgba(168,85,247,0.3)] ring-1 ring-purple-400'
+                        : isDetected
+                        ? 'bg-slate-900/60 border-purple-500/50 hover:border-purple-500/80'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
                     }`}
                   >
-                    {bridgeState.activeSource === 'cloudmix' ? 'ACTIVE' : 'READY'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  Direct BroadcastChannel sync with remote 1-click loading into Deck A & Deck B.
-                </p>
-              </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-lg bg-indigo-600/30 text-indigo-400 flex items-center justify-center font-bold text-xs">
+                          ⚡
+                        </div>
+                        <span className="font-bold text-sm text-white">CloudMix Pro</span>
+                        {isDetected && !isActive && (
+                          <span className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 animate-pulse">
+                            DETECTED
+                          </span>
+                        )}
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                        isActive
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isActive ? (bridgeState.autoDetectEnabled && isDetected ? '⚡ AUTO' : 'ACTIVE') : 'READY'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2">
+                      Direct BroadcastChannel sync with remote 1-click loading into Deck A & Deck B.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* 2. Algoriddim djay Pro */}
-              <div
-                onClick={() => universalDjBridge.setSource('djay_pro')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  bridgeState.activeSource === 'djay_pro'
-                    ? 'bg-cyan-950/40 border-cyan-500 shadow-[0_0_14px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-7 h-7 rounded-lg bg-cyan-600/30 text-cyan-400 flex items-center justify-center font-bold text-xs">
-                      🎧
-                    </div>
-                    <span className="font-bold text-sm text-white">Algoriddim djay Pro</span>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                      bridgeState.activeSource === 'djay_pro'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-slate-800 text-slate-400'
+              {(() => {
+                const isActive = bridgeState.activeSource === 'djay_pro';
+                const isDetected = !!bridgeState.lastDetectedSources?.djay_pro;
+                return (
+                  <div
+                    onClick={() => universalDjBridge.setSource('djay_pro')}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all relative ${
+                      isActive
+                        ? 'bg-cyan-950/40 border-cyan-500 shadow-[0_0_14px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
+                        : isDetected
+                        ? 'bg-slate-900/60 border-cyan-500/50 hover:border-cyan-500/80'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
                     }`}
                   >
-                    {bridgeState.activeSource === 'djay_pro' ? 'ACTIVE' : 'POLLING'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  Reads active songs from djay Pro SQLite MediaLibrary.db & StreamerBot nowplaying.
-                </p>
-              </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-lg bg-cyan-600/30 text-cyan-400 flex items-center justify-center font-bold text-xs">
+                          🎧
+                        </div>
+                        <span className="font-bold text-sm text-white">Algoriddim djay Pro</span>
+                        {isDetected && !isActive && (
+                          <span className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 animate-pulse">
+                            DETECTED
+                          </span>
+                        )}
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                        isActive
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : isDetected
+                          ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isActive ? (bridgeState.autoDetectEnabled && isDetected ? '⚡ AUTO' : 'ACTIVE') : isDetected ? 'FOUND' : 'POLLING'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2">
+                      Reads active songs from djay Pro SQLite MediaLibrary.db & StreamerBot nowplaying.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* 3. Serato DJ Pro & Rekordbox */}
-              <div
-                onClick={() => universalDjBridge.setSource('file')}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  bridgeState.activeSource === 'file'
-                    ? 'bg-amber-950/40 border-amber-500 shadow-[0_0_14px_rgba(245,158,11,0.3)] ring-1 ring-amber-400'
-                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-600/30 text-amber-400 flex items-center justify-center font-bold text-xs">
-                      🎛️
-                    </div>
-                    <span className="font-bold text-sm text-white">Serato & Rekordbox</span>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                      bridgeState.activeSource === 'file'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-slate-800 text-slate-400'
+              {(() => {
+                const isActive = bridgeState.activeSource === 'file';
+                const isDetected = !!bridgeState.lastDetectedSources?.file;
+                return (
+                  <div
+                    onClick={() => universalDjBridge.setSource('file')}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all relative ${
+                      isActive
+                        ? 'bg-amber-950/40 border-amber-500 shadow-[0_0_14px_rgba(245,158,11,0.3)] ring-1 ring-amber-400'
+                        : isDetected
+                        ? 'bg-slate-900/60 border-amber-500/50 hover:border-amber-500/80'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
                     }`}
                   >
-                    {bridgeState.activeSource === 'file' ? 'ACTIVE' : 'WATCHER'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  Listens to C:\StreamerBot\nowplaying.txt and standard session history broadcast logs.
-                </p>
-              </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-7 h-7 rounded-lg bg-amber-600/30 text-amber-400 flex items-center justify-center font-bold text-xs">
+                          🎛️
+                        </div>
+                        <span className="font-bold text-sm text-white">Serato & Rekordbox</span>
+                        {isDetected && !isActive && (
+                          <span className="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                            DETECTED
+                          </span>
+                        )}
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                        isActive
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : isDetected
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {isActive ? (bridgeState.autoDetectEnabled && isDetected ? '⚡ AUTO' : 'ACTIVE') : isDetected ? 'FOUND' : 'WATCHER'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2">
+                      Listens to C:\StreamerBot\nowplaying.txt and standard session history broadcast logs.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* 4. Manual Pin Reference */}
               <div
@@ -375,18 +429,19 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
                     </div>
                     <span className="font-bold text-sm text-white">Manual Pin Mode</span>
                   </div>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                      bridgeState.activeSource === 'manual'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                    bridgeState.activeSource === 'manual'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}>
                     {bridgeState.activeSource === 'manual' ? 'ACTIVE' : 'MANUAL'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-2">
                   Manually lock onto any reference track or BPM/Key to plan your next transition.
+                  {bridgeState.autoDetectEnabled && (
+                    <span className="ml-1 text-purple-400">Auto-detect paused while pinned.</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -406,3 +461,4 @@ export const MixCortexStandaloneApp: React.FC<MixCortexStandaloneAppProps> = ({ 
     </div>
   );
 };
+

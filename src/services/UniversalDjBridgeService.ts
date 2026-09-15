@@ -7,6 +7,10 @@
  * - Serato DJ Pro (History Session Watcher & nowplaying.txt)
  * - Pioneer Rekordbox (Live metadata watcher)
  * - VirtualDJ & Native Instruments Traktor Pro (Broadcast metadata)
+ *
+ * Auto-Detection: polls every 3 seconds and automatically switches to the
+ * highest-confidence detected source. CloudMix is detected via BroadcastChannel;
+ * djay Pro and file sources are probed via Electron IPC.
  */
 
 import { CortexNowPlaying, CortexSourceMode, CortexTrack } from '../types/cortex';
@@ -16,7 +20,7 @@ import { cortexMonitorService } from './CortexMonitorService';
 export interface DjSoftwareConnection {
   id: CortexSourceMode;
   name: string;
-  status: 'connected' | 'polling' | 'disconnected' | 'manual';
+  status: 'connected' | 'polling' | 'disconnected' | 'manual' | 'auto-detected';
   latencyMs?: number;
   lastUpdated?: string;
   details?: string;
@@ -26,11 +30,21 @@ export type BridgeListener = (status: {
   activeSource: CortexSourceMode;
   connections: Record<CortexSourceMode, DjSoftwareConnection>;
   nowPlaying: CortexNowPlaying;
+  autoDetectEnabled: boolean;
+  lastDetectedSources: Partial<Record<CortexSourceMode, boolean>>;
 }) => void;
+
+// Detection priority — higher index = higher priority
+const DETECTION_PRIORITY: CortexSourceMode[] = ['file', 'djay_pro', 'cloudmix'];
 
 class UniversalDjBridgeService {
   private broadcastChannel: BroadcastChannel | null = null;
   private listeners: Set<BridgeListener> = new Set();
+  private autoDetectEnabled = true;
+  private autoDetectInterval: ReturnType<typeof setInterval> | null = null;
+  private cloudmixAliveUntil = 0; // timestamp ms — stays "alive" for 8s after last BroadcastChannel msg
+  private lastDetectedSources: Partial<Record<CortexSourceMode, boolean>> = {};
+  private userOverrodeSource = false; // set when user manually clicks a source card
 
   private connections: Record<CortexSourceMode, DjSoftwareConnection> = {
     cloudmix: {
@@ -62,6 +76,7 @@ class UniversalDjBridgeService {
   constructor() {
     this.initBroadcastChannel();
     this.initMonitorSync();
+    this.startAutoDetect();
   }
 
   private initBroadcastChannel() {
@@ -79,7 +94,6 @@ class UniversalDjBridgeService {
 
   private initMonitorSync() {
     cortexMonitorService.subscribe((nowPlaying) => {
-      // Update connection status based on active source
       const currentSource = nowPlaying.source;
       if (this.connections[currentSource]) {
         this.connections[currentSource].status = nowPlaying.isPlaying ? 'connected' : 'polling';
@@ -89,15 +103,81 @@ class UniversalDjBridgeService {
     });
   }
 
+  // ─── Auto-Detection ───────────────────────────────────────────────────────
+
+  private startAutoDetect() {
+    if (this.autoDetectInterval) clearInterval(this.autoDetectInterval);
+    // Run immediately then every 3 seconds
+    this.runAutoDetect();
+    this.autoDetectInterval = setInterval(() => this.runAutoDetect(), 3000);
+  }
+
+  private async runAutoDetect() {
+    if (!this.autoDetectEnabled) return;
+    if (this.userOverrodeSource) return;
+
+    // Build detection map
+    const detected: Partial<Record<CortexSourceMode, boolean>> = {};
+
+    // 1. CloudMix Pro — purely client-side via BroadcastChannel heartbeat
+    detected.cloudmix = Date.now() < this.cloudmixAliveUntil;
+
+    // 2. djay Pro + file — ask main process
+    if (typeof window !== 'undefined' && (window as any).desktopAPI?.detectDjSoftware) {
+      try {
+        const result = await (window as any).desktopAPI.detectDjSoftware();
+        if (result) {
+          detected.djay_pro = !!result.djay_pro;
+          detected.file = !!result.file;
+        }
+      } catch {}
+    }
+
+    this.lastDetectedSources = detected;
+
+    // Update connection status badges
+    for (const [src, alive] of Object.entries(detected) as [CortexSourceMode, boolean][]) {
+      if (this.connections[src]) {
+        if (alive) {
+          this.connections[src].status = 'auto-detected';
+        } else if (this.connections[src].status === 'auto-detected') {
+          this.connections[src].status = 'polling';
+        }
+      }
+    }
+
+    // Pick highest-priority detected source
+    const currentSource = cortexMonitorService.getNowPlaying().source;
+    if (currentSource === 'manual') {
+      // Never auto-switch out of manual — user explicitly pinned
+      this.notify();
+      return;
+    }
+
+    let bestSource: CortexSourceMode | null = null;
+    for (const src of DETECTION_PRIORITY) {
+      if (detected[src]) bestSource = src;
+    }
+
+    if (bestSource && bestSource !== currentSource) {
+      cortexMonitorService.setSource(bestSource);
+    }
+
+    this.notify();
+  }
+
+  // ─── BroadcastChannel Handler ─────────────────────────────────────────────
+
   private handleIncomingBroadcast(data: any) {
     if (!data || !data.type) return;
 
-    if (data.type === 'CLOUBMIX_STATE_UPDATE') {
+    if (data.type === 'CLOUBMIX_STATE_UPDATE' || data.type === 'CLOUDMIX_STATE_UPDATE') {
+      // Keep CloudMix alive for 8 seconds after last heartbeat
+      this.cloudmixAliveUntil = Date.now() + 8000;
       this.connections.cloudmix.status = 'connected';
       this.connections.cloudmix.lastUpdated = new Date().toLocaleTimeString();
 
       if (cortexMonitorService.getNowPlaying().source === 'cloudmix') {
-        // Broadcast received from standalone CloudMix Pro workstation
         if (data.activeTrack) {
           cortexMonitorService.setManualTrack(data.activeTrack);
         }
@@ -105,6 +185,8 @@ class UniversalDjBridgeService {
       this.notify();
     }
   }
+
+  // ─── Public API ───────────────────────────────────────────────────────────
 
   public subscribe(listener: BridgeListener): () => void {
     this.listeners.add(listener);
@@ -118,6 +200,8 @@ class UniversalDjBridgeService {
       activeSource: nowPlaying.source,
       connections: { ...this.connections },
       nowPlaying,
+      autoDetectEnabled: this.autoDetectEnabled,
+      lastDetectedSources: { ...this.lastDetectedSources },
     };
   }
 
@@ -127,13 +211,25 @@ class UniversalDjBridgeService {
   }
 
   public setSource(source: CortexSourceMode) {
+    // User manually chose a source — pause auto-detect switching until the next
+    // auto-detect cycle finds something different (15s grace period)
+    this.userOverrodeSource = true;
+    setTimeout(() => { this.userOverrodeSource = false; }, 15000);
     cortexMonitorService.setSource(source);
     this.notify();
   }
 
-  // Remote Load into CloudMix Pro Deck A or B (works from standalone MixCortex into CloudMix Pro!)
+  public setAutoDetect(enabled: boolean) {
+    this.autoDetectEnabled = enabled;
+    if (enabled) {
+      this.userOverrodeSource = false;
+      this.runAutoDetect();
+    }
+    this.notify();
+  }
+
+  // Remote Load into CloudMix Pro Deck A or B
   public loadIntoCloudMixDeck(deckId: 'A' | 'B', track: CortexTrack) {
-    // 1. BroadcastChannel local event
     if (this.broadcastChannel) {
       this.broadcastChannel.postMessage({
         type: 'LOAD_TRACK_COMMAND',
@@ -143,7 +239,6 @@ class UniversalDjBridgeService {
       });
     }
 
-    // 2. Desktop API Bridge (if available)
     if (typeof window !== 'undefined' && (window as any).desktopAPI?.writeNowPlayingBroadcast) {
       (window as any).desktopAPI.writeNowPlayingBroadcast({
         title: track.title,
@@ -155,7 +250,6 @@ class UniversalDjBridgeService {
     }
   }
 
-  // Copy track information formatted for instant search in djay Pro, Serato, Rekordbox, Traktor, VirtualDJ
   public copyForExternalDjSearch(track: CortexTrack): string {
     const searchString = `${track.artist} ${track.title}`;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {

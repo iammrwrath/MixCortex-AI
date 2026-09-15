@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('desktopAPI', {
   readDjayNowPlaying: () => ipcRenderer.invoke('read-djay-nowplaying'),
   readDjayLibrary: () => ipcRenderer.invoke('read-djay-library'),
   readExternalNowPlayingFile: (filePath) => ipcRenderer.invoke('read-external-nowplaying-file', filePath),
+  detectDjSoftware: () => ipcRenderer.invoke('detect-dj-software'),
   startNativeDrag: (payload) => ipcRenderer.send('start-native-drag', payload),
 
   // Standalone Window Controls

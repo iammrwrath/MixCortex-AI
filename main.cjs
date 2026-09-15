@@ -563,7 +563,75 @@ ipcMain.handle('read-external-nowplaying-file', async (event, filePath) => {
   return null;
 });
 
+// Auto DJ Software Detection — probes all known sources and returns confidence flags
+ipcMain.handle('detect-dj-software', async () => {
+  const result = {
+    djay_pro: false,
+    file: false,
+    cloudmix: false, // always determined client-side via BroadcastChannel
+  };
+
+  // 1. djay Pro: DB exists + has a history row written within the last 30 minutes
+  try {
+    const db = getDjayDb();
+    if (db) {
+      const row = db.prepare(
+        "SELECT data FROM database2 WHERE collection='historySessionItems' ORDER BY rowid DESC LIMIT 1"
+      ).get();
+      if (row && row.data) {
+        const buf = Buffer.from(row.data);
+        let startTime = 0;
+        const stIdx = buf.indexOf(Buffer.from('startTime'));
+        if (stIdx >= 9) {
+          try {
+            const cocoaSecs = buf.readDoubleLE(stIdx - 9);
+            startTime = (978307200 + cocoaSecs) * 1000; // Cocoa epoch → Unix ms
+          } catch {}
+        }
+        const ageMs = startTime > 0 ? Date.now() - startTime : Infinity;
+        // Consider djay Pro "active" if last session item is < 30 min old
+        result.djay_pro = ageMs < 30 * 60 * 1000;
+
+        // Also check whether the DB file itself was modified recently (< 5 min)
+        if (!result.djay_pro && fs.existsSync(djayDbPath)) {
+          const stat = fs.statSync(djayDbPath);
+          result.djay_pro = (Date.now() - stat.mtimeMs) < 5 * 60 * 1000;
+        }
+      }
+    } else if (fs.existsSync(djayDbPath)) {
+      // DB exists but couldn't open — still flag as potentially available
+      const stat = fs.statSync(djayDbPath);
+      result.djay_pro = (Date.now() - stat.mtimeMs) < 5 * 60 * 1000;
+    }
+  } catch (err) {
+    log('[AUTO-DETECT] djay Pro probe error: ' + err.message);
+  }
+
+  // 2. Serato / Rekordbox / StreamerBot: nowplaying.txt exists and non-empty
+  const nowPlayingPaths = [
+    'C:\\StreamerBot\\nowplaying.txt',
+    'G:\\My Drive\\Backup\\Streamerbot\\Output\\nowplaying.txt',
+  ];
+  for (const fpath of nowPlayingPaths) {
+    try {
+      if (fs.existsSync(fpath)) {
+        const content = fs.readFileSync(fpath, 'utf8').trim();
+        if (content.length > 0) {
+          // Check file was written recently (< 10 min)
+          const stat = fs.statSync(fpath);
+          result.file = (Date.now() - stat.mtimeMs) < 10 * 60 * 1000;
+          if (result.file) break;
+        }
+      }
+    } catch {}
+  }
+
+  log(`[AUTO-DETECT] djay_pro=${result.djay_pro} file=${result.file}`);
+  return result;
+});
+
 // Auto-Updater & GitHub Patch Engine
+
 let autoUpdater = null;
 try {
   const updaterModule = require('electron-updater');
