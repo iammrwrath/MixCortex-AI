@@ -71,11 +71,7 @@ export const PatchUpdateModal: React.FC<PatchUpdateModalProps> = ({ onClose }) =
   };
 
   const handleDownload = () => {
-    if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
-    } else {
-      updateService.startDownload();
-    }
+    updateService.startDownload();
   };
 
   const handleApply = () => {
